@@ -1,0 +1,11 @@
+{
+  "cpu": { "manufacturer": "Apple", "brand": "M3 Max", "cores": 16, "physicalCores": 16 },
+  "mem": { "total": 68719476736 },
+  "graphics": {
+    "controllers": [
+      { "vendor": "Apple", "model": "Apple M3 Max", "vram": 0, "vramDynamic": false }
+    ]
+  },
+  "platform": "darwin",
+  "arch": "arm64"
+}

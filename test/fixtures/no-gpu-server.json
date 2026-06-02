@@ -1,0 +1,7 @@
+{
+  "cpu": { "manufacturer": "Intel", "brand": "Xeon E5-2680", "cores": 28, "physicalCores": 14 },
+  "mem": { "total": 34359738368 },
+  "graphics": { "controllers": [] },
+  "platform": "linux",
+  "arch": "x64"
+}

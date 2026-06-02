@@ -1,0 +1,11 @@
+{
+  "cpu": { "manufacturer": "AMD", "brand": "Ryzen 9 7950X", "cores": 32, "physicalCores": 16 },
+  "mem": { "total": 68719476736 },
+  "graphics": {
+    "controllers": [
+      { "vendor": "NVIDIA", "model": "NVIDIA GeForce RTX 4090", "name": "NVIDIA GeForce RTX 4090", "vram": 24564, "vramDynamic": false }
+    ]
+  },
+  "platform": "linux",
+  "arch": "x64"
+}

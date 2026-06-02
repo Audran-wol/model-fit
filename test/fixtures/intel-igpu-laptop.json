@@ -1,0 +1,11 @@
+{
+  "cpu": { "manufacturer": "Intel", "brand": "Core i5-1135G7", "cores": 8, "physicalCores": 4 },
+  "mem": { "total": 8589934592 },
+  "graphics": {
+    "controllers": [
+      { "vendor": "Intel Corporation", "model": "Intel(R) Iris(R) Xe Graphics", "vram": 2048, "vramDynamic": true }
+    ]
+  },
+  "platform": "win32",
+  "arch": "x64"
+}

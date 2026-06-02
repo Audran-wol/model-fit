@@ -1,0 +1,44 @@
+{
+  "name": "model-fit",
+  "version": "0.1.1",
+  "description": "Detect your hardware and find LLMs that will actually run on it — with real VRAM/KV-cache fit math, not opaque scores.",
+  "type": "module",
+  "bin": {
+    "model-fit": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "llm",
+    "ollama",
+    "llama.cpp",
+    "gguf",
+    "hardware",
+    "vram",
+    "local-ai",
+    "cli"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "picocolors": "^1.1.1",
+    "systeminformation": "^5.23.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
