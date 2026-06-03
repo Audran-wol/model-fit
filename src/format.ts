@@ -27,7 +27,7 @@ function modeLabel(p: Placement): string {
 // ── Header / logo ───────────────────────────────────────────────────────────
 export function renderHeader(subtitle: string, elapsedMs?: number): string {
   const logo = pc.green(pc.bold("[MF]"));
-  const title = pc.green(pc.bold("Model Fit Advisor")) + pc.dim("  v0.1.1");
+  const title = pc.green(pc.bold("Model Fit Advisor")) + pc.dim("  v0.1.2");
   const status =
     elapsedMs != null
       ? pc.dim(`${subtitle} · ${(elapsedMs / 1000).toFixed(1)}s`)

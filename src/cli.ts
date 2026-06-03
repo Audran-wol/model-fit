@@ -34,7 +34,7 @@ const program = new Command();
 program
   .name("model-fit")
   .description("Find local LLMs that actually run on your hardware — with real fit math.")
-  .version("0.1.1")
+  .version("0.1.2")
   .option("--hw <file>", "load hardware from a JSON dump instead of detecting");
 
 function globalOpts() {

@@ -1,91 +1,112 @@
 # model-fit
 
-Find local LLMs that **actually run** on your hardware — with real fit math, not opaque scores.
+**Find the local LLMs that actually run on your hardware** — with real VRAM math, not opaque scores.
 
-Unlike tools that print a mystery "Score: 90/100", `model-fit` computes the real
-memory budget for each model (**weights + KV cache for your context length +
-runtime overhead**), tells you whether it lands on **full-GPU / hybrid /
-CPU-only / won't-run**, estimates **tokens/sec**, and shows the score breakdown.
+Stop pulling models that crash with "out of memory" or crawl at 2 tokens/sec.
+`model-fit` reads your CPU / GPU / RAM and, for every model, computes the real
+memory budget (**weights + KV cache for your context length + overhead**) to tell
+you whether it runs **full-GPU**, **hybrid**, **CPU-only**, or **won't run** —
+plus an estimated **tokens/sec** and *why*.
 
-## Quick start (development)
+## Install
 
-```bash
-npm install        # install dependencies
-npm run dev -- detect            # run straight from TypeScript (no build)
-npm run dev -- recommend --category coding --ctx 8192
-npm run dev -- check llama3.1 --ctx 32768
-```
-
-To get a real `model-fit` command on your machine:
+Run it instantly with no install:
 
 ```bash
-npm run build      # compile TypeScript -> dist/
-npm link           # creates a global `model-fit` command
-model-fit detect
+npx model-fit
 ```
 
-## Commands
+Or install it globally for a permanent `model-fit` command:
+
+```bash
+npm install -g model-fit
+```
+
+> Requires [Node.js](https://nodejs.org) 18 or newer. Works on Windows, macOS, and Linux.
+
+## Usage
+
+```bash
+model-fit detect                 # show your hardware
+model-fit recommend              # best models for your machine, by category
+model-fit recommend -c coding    # focus on one category
+model-fit check llama3.1         # can I run this specific model?
+```
+
+### Commands
 
 | Command | What it does |
 | --- | --- |
-| `model-fit detect` (alias `hw`) | Print detected CPU / RAM / GPU + the inference target |
-| `model-fit recommend` | Rank models that fit, best first |
-| `model-fit check <model>` | Deep-dive one model's fit |
+| `model-fit detect` | Detect and print your CPU / GPU / RAM |
+| `model-fit recommend` | Recommend the models that fit, ranked |
+| `model-fit check <model>` | Deep-dive whether one model fits (memory breakdown) |
 
-Useful flags: `--ctx <tokens>` (sizes the KV cache — try 32768 to see VRAM cost
-explode), `--category coding|reasoning|vision|...`, `--runtime ollama|llama.cpp`.
+### Options
 
-## How the math works (the honest part)
+| Flag | Description |
+| --- | --- |
+| `-c, --category <name>` | `coding`, `reasoning`, `vision`, `creative`, `chat`, `reading`, `general` |
+| `--ctx <tokens>` | Context window to size the KV cache for (default `8192`) |
+| `--runtime <name>` | Show commands for `ollama` (default) or `llama.cpp` |
+| `--refresh` | Pull the latest models from Hugging Face + your local Ollama |
+| `--top <n>` | How many models to list (with `--category`) |
 
-- **Weights** = `params(B) × bytes-per-weight[quant]`. Q4_K_M ≈ 0.56 B/param,
-  so a 7B model ≈ 3.9 GB.
-- **KV cache** = `(ctx/1000) × 0.5 × (params/7)` GB (fp16). Calibrated so
-  Llama-7B @ 4k ctx ≈ 2 GB. This is the cost most tools ignore.
-- **Speed** ≈ `memory bandwidth ÷ active weights` — generation is bandwidth
-  bound, and MoE models only read their active experts.
+**Tip:** raise `--ctx` (e.g. `--ctx 32768`) to watch the KV cache — and the VRAM
+cost — grow. That's the part most tools ignore.
 
-All ballparks, but transparent: every number on screen is derived, and you can
-see the inputs in `src/fit.ts`.
+## Example
 
-## Next steps / ideas to grow it
+```
+  [MF]  Model Fit Advisor  v0.1.2
 
-- Read real GPU memory bandwidth (e.g. `nvidia-smi`) instead of estimating.
-- Add KV-cache quantization (`--kv-quant q8`) to the math.
-- `model-fit run <model>` to pull + launch in one step.
-- Clean up noisy Hugging Face repo names / prefer trusted uploaders.
+  Detected system
+  GPU:  NVIDIA GeForce GTX 1660 Ti (6 GB VRAM)     RAM:  16 GB
+  CPU:  Intel Core i7-9750H (6 cores / 12 threads) OS:   Windows
 
-## Model sources (where the suggestions come from)
+  ★ BEST PICK: Llama 3.2 3B
+    Runtime    VRAM           Context   Speed         Quality
+    FULL GPU   5.4 / 5.4 GB   8,192     ~123 tok/s    33 / 100
 
-The catalog (`src/catalog.ts`) merges three sources, then de-dupes:
-
-| Source | Endpoint | Gives |
-| --- | --- | --- |
-| **Curated seed** | `src/models.ts` | Clean names/categories, works offline |
-| **Ollama (local)** | `http://localhost:11434/api/tags` | Models you have installed, with **real byte sizes** |
-| **Hugging Face Hub** | `/api/models?filter=gguf&sort=downloads` | The big GGUF catalog, by popularity |
-
-Refresh the live data with `--refresh`; it's cached for 24h under
-`~/.cache/model-fit/` so the tool stays fast and works offline.
-
-## Testing (how to trust it on machines you don't own)
-
-Detection is split into a **pure** `buildHardware(raw)` and the I/O wrapper
-`detectHardware()`. That lets us simulate any machine:
-
-```bash
-npm test                         # unit tests: fit math + detection across fixtures
-model-fit detect --raw             # dump YOUR machine's raw reading
-model-fit --hw test/fixtures/macbook-m3-max.json recommend   # replay another machine
+  Best model per category
+    Coding     Qwen2.5 Coder 7B   ████░░░░  hybrid
+    Reasoning  DeepSeek-R1 8B     ██████░░  full-gpu
+    Vision     LLaVA-Llama3 8B    ████░░░░  full-gpu
+    ...
 ```
 
-- `test/fixtures/*.json` are saved raw readings (Mac M3 Max, RTX 4090, no-GPU
-  server, iGPU laptop). Add your testers' `--raw` dumps here as regression cases.
-- `.github/workflows/ci.yml` runs the suite on **Windows + macOS + Linux** across
-  Node 18/20/22 on every push.
+## How it works
 
-**When a tester hits a bug:** have them run `model-fit detect --raw > my-pc.json`
-and send the file. Drop it in `test/fixtures/`, reproduce with `--hw`, fix, and
-the fixture becomes a permanent regression test.
+Every number on screen is derived from your hardware and the model — no black-box scores:
+
+- **Weights** = `params × bytes-per-weight[quant]` (Q4_K_M ≈ 0.56 GB per billion params).
+- **KV cache** is sized to your context length **and** the model's real attention
+  architecture (GQA-aware — so modern models like Llama 3 / Qwen2.5 aren't wrongly
+  flagged "won't run" at long context).
+- **Speed** ≈ `memory bandwidth ÷ active weights` (generation is bandwidth-bound;
+  MoE models only read their active experts).
+
+These are honest estimates: where the architecture is unverified, the output says so.
+
+## Where the models come from
+
+The catalog merges three sources and de-dupes:
+
+- a **curated seed list** (works offline),
+- your **local Ollama** models (`localhost:11434`) with real on-disk sizes,
+- the **Hugging Face Hub** GGUF catalog, by popularity.
+
+Live data is cached for 24h, so it's fast and works offline. Use `--refresh` to update.
+
+## Development
+
+```bash
+git clone https://github.com/Audran-wol/model-fit
+cd model-fit
+npm install
+npm run dev -- recommend   # run from source
+npm test                   # run the test suite
+npm run build              # compile to dist/
+```
 
 ## License
 
