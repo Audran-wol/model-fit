@@ -1,6 +1,6 @@
 {
   "name": "model-fit",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Detect your hardware and find LLMs that will actually run on it — with real VRAM/KV-cache fit math, not opaque scores.",
   "type": "module",
   "bin": {

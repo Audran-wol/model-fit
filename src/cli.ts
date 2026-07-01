@@ -34,7 +34,7 @@ const program = new Command();
 program
   .name("model-fit")
   .description("Find local LLMs that actually run on your hardware — with real fit math.")
-  .version("0.1.2")
+  .version("0.1.3")
   .option("--hw <file>", "load hardware from a JSON dump instead of detecting");
 
 function globalOpts() {
@@ -156,11 +156,30 @@ program
       console.log(pc.red(`  No model matching "${query}".`) + pc.dim("  Try: model-fit recommend\n"));
       return;
     }
-    matches.slice(0, 10).forEach((m) => {
-      const quant = opts.quant ?? pickBestQuant(m, hw, ctx);
-      console.log(renderDetail(computeFit(m, quant, hw, ctx), hw, opts.runtime));
+    // Score every variant, then show runnable ones first (don't lead with the
+    // biggest model just because it sorted first alphabetically).
+    const results = matches
+      .slice(0, 20)
+      .map((m) => computeFit(m, opts.quant ?? pickBestQuant(m, hw, ctx), hw, ctx))
+      .sort((a, b) => b.score - a.score);
+    results.slice(0, 10).forEach((r) => {
+      console.log(renderDetail(r, hw, opts.runtime));
       console.log();
     });
+
+    // If nothing in the family fits, point to the best model that does.
+    if (results.every((r) => r.placement === "wont-run")) {
+      const best = catalog.models
+        .map((m) => computeFit(m, pickBestQuant(m, hw, ctx), hw, ctx))
+        .filter((r) => r.placement !== "wont-run")
+        .sort((a, b) => b.score - a.score)[0];
+      if (best) {
+        console.log(pc.yellow(`  None of these fit your machine.`) + pc.dim(" Best alternative that does:"));
+        console.log("  " + pc.bold(best.model.name) + pc.dim(`  ~${best.tokPerSec} tok/s · ${best.quant}`));
+        console.log(renderInstall(best, opts.runtime));
+        console.log();
+      }
+    }
   });
 
 if (process.argv.length <= 2) process.argv.push("recommend");
